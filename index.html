@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会話AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .input-area {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .response-area {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>会話AI</h1>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="メッセージを入力">
+            <button id="sendButton">送信</button>
+        </div>
+        <div id="responseArea" class="response-area"></div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ml5.js/0.6.3/ml5.min.js"></script>
+    <script>
+        let model;
+        let words = {};
+        let sequences = {};
+
+        // JSONファイルを読み込む関数
+        function loadJSON(file, callback) {
+            const xhr = new XMLHttpRequest();
+            xhr.overrideMimeType("application/json");
+            xhr.open("GET", file, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    callback(JSON.parse(xhr.responseText));
+                }
+            };
+            xhr.send(null);
+        }
+
+        // モデルがロードされたときの処理
+        function modelLoaded() {
+            console.log('Model Loaded!');
+        }
+
+        // 確率に基づいて応答を選択する関数
+        function selectResponse(responses) {
+            const random = Math.random();
+            let cumulativeProbability = 0;
+
+            for (const response of responses) {
+                cumulativeProbability += response.probability;
+                if (random < cumulativeProbability) {
+                    return response.id; // 選ばれた応答のIDを返す
+                }
+            }
+            return responses[responses.length - 1].id; // 最後のIDをデフォルトで返す（万が一のため）
+        }
+
+        // 次の単語を生成する関数
+        function generateResponse(inputArray) {
+            // 仮の生成処理（ランダムで単語を選ぶ）
+            const nextWordId = inputArray[Math.floor(Math.random() * inputArray.length)];
+            const nextWord = words.words.find(word => word.id == nextWordId);
+
+            if (nextWord) {
+                console.log(`生成された単語: ${nextWord.word} (品詞: ${nextWord.pos})`);
+                document.getElementById('responseArea').innerText += `\nAIの応答: ${nextWord.word}`;
+            }
+        }
+
+        // ユーザー入力の送信処理
+        document.getElementById('sendButton').addEventListener('click', () => {
+            const userInput = document.getElementById('userInput').value;
+            const sequence = sequences.sequences.find(seq => seq.input === userInput);
+
+            if (sequence) {
+                const inputSequence = sequence.ids; // 入力に対応する単語IDの配列
+                document.getElementById('responseArea').innerText = ''; // 応答エリアをリセット
+                generateResponse(inputSequence); // 単語を生成
+
+                // 確率に基づいて応答を選択して表示
+                const randomResponseId = selectResponse(sequence.responses);
+                const responseWord = words.words.find(word => word.id === randomResponseId);
+                if (responseWord) {
+                    document.getElementById('responseArea').innerText += `\nAIの追加応答: ${responseWord.word}`;
+                }
+            } else {
+                console.log("入力が見つかりませんでした。");
+                document.getElementById('responseArea').innerText = "申し訳ありませんが、その入力に対する応答はありません。";
+            }
+        });
+
+        // モデルを読み込む処理（ここでは仮にモデルのロードを行う）
+        model = ml5.neuralNetwork({ task: 'classification', debug: true });
+        model.load('model.json', modelLoaded);
+
+        // JSONファイルを読み込む
+        loadJSON('word.json', (data) => {
+            words = data;
+            console.log("words loaded", words);
+        });
+        loadJSON('sequence.json', (data) => {
+            sequences = data;
+            console.log("sequences loaded", sequences);
+        });
+    </script>
+</body>
+</html>
