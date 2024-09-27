@@ -58,6 +58,16 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+
+        .console {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -68,6 +78,7 @@
             <button id="sendButton">送信</button>
         </div>
         <div id="responseArea" class="response-area"></div>
+        <div id="consoleArea" class="console"></div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ml5.js/0.6.3/ml5.min.js"></script>
     <script>
@@ -90,7 +101,14 @@
 
         // モデルがロードされたときの処理
         function modelLoaded() {
-            console.log('Model Loaded!');
+            logToConsole('Model Loaded!');
+        }
+
+        // コンソールにメッセージを表示する関数
+        function logToConsole(message) {
+            const consoleArea = document.getElementById('consoleArea');
+            consoleArea.innerText += message + '\n';
+            consoleArea.scrollTop = consoleArea.scrollHeight; // スクロールを一番下にする
         }
 
         // 確率に基づいて応答を選択する関数
@@ -114,7 +132,7 @@
             const nextWord = words.words.find(word => word.id == nextWordId);
 
             if (nextWord) {
-                console.log(`生成された単語: ${nextWord.word} (品詞: ${nextWord.pos})`);
+                logToConsole(`生成された単語: ${nextWord.word} (品詞: ${nextWord.pos})`);
                 document.getElementById('responseArea').innerText += `\nAIの応答: ${nextWord.word}`;
             }
         }
@@ -136,7 +154,7 @@
                     document.getElementById('responseArea').innerText += `\nAIの追加応答: ${responseWord.word}`;
                 }
             } else {
-                console.log("入力が見つかりませんでした。");
+                logToConsole("入力が見つかりませんでした。");
                 document.getElementById('responseArea').innerText = "申し訳ありませんが、その入力に対する応答はありません。";
             }
         });
@@ -148,11 +166,11 @@
         // JSONファイルを読み込む
         loadJSON('word.json', (data) => {
             words = data;
-            console.log("words loaded", words);
+            logToConsole("words loaded");
         });
         loadJSON('sequence.json', (data) => {
             sequences = data;
-            console.log("sequences loaded", sequences);
+            logToConsole("sequences loaded");
         });
     </script>
 </body>
